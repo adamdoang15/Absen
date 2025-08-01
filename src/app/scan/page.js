@@ -23,18 +23,16 @@ export default function ScanPage() {
       return;
     }
 
-    // Validasi QR (apakah termasuk kegiatan yang diizinkan?)
     if (!allowedActivities.includes(data)) {
       alert(`❌ Kegiatan "${data}" tidak terdaftar.`);
       return;
     }
 
     const userInfo = JSON.parse(saved);
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const today = new Date().toISOString().split("T")[0];
 
     const scanHistoryRaw = localStorage.getItem("scanHistory");
     const scanHistory = scanHistoryRaw ? JSON.parse(scanHistoryRaw) : {};
-
     const todayHistory = scanHistory[today] || [];
 
     if (todayHistory.includes(data)) {
@@ -45,9 +43,8 @@ export default function ScanPage() {
     const payload = {
       nama: userInfo.nama,
       kelas: userInfo.kelas,
-      aktivitas: data,         // Nama kegiatan dari QR
-      keterangan: "hadir",     // Selalu hadir jika berhasil scan
-      timestamp: new Date().toISOString(),
+      aktivitas: data,
+      keterangan: "hadir",
     };
 
     try {
@@ -60,7 +57,11 @@ export default function ScanPage() {
       const result = await response.json();
       console.log("[ScanPage] Response dari server:", result);
 
-      // Simpan ke histori
+      if (!result.success) {
+        alert(`❌ ${result.message || "Gagal mengirim absensi."}`);
+        return;
+      }
+
       const updatedTodayHistory = [...todayHistory, data];
       const updatedScanHistory = { ...scanHistory, [today]: updatedTodayHistory };
       localStorage.setItem("scanHistory", JSON.stringify(updatedScanHistory));
