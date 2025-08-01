@@ -7,28 +7,36 @@ export default function ScanPage() {
   const [scannedData, setScannedData] = useState(null);
 
   const handleScan = async (data) => {
-    console.log("[ScanPage] QR Terdeteksi:", data);
-
     const saved = localStorage.getItem("userInfo");
-    console.log("[ScanPage] userInfo dari localStorage:", saved);
-
     if (!saved) {
       alert("Perangkat belum terdaftar. Silakan daftar di menu 'Device'.");
       return;
     }
 
     const userInfo = JSON.parse(saved);
+    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
 
-    // Kirim data ke spreadsheet
+    // Cek apakah sudah scan kegiatan yang sama hari ini
+    const scanHistoryRaw = localStorage.getItem("scanHistory");
+    const scanHistory = scanHistoryRaw ? JSON.parse(scanHistoryRaw) : {};
+
+    const todayHistory = scanHistory[today] || [];
+
+    if (todayHistory.includes(data)) {
+      alert(`❌ Kamu sudah absen untuk kegiatan "${data}" hari ini.`);
+      return;
+    }
+
     const payload = {
       nama: userInfo.nama,
       kelas: userInfo.kelas,
+      aktivitas: data,         // Nama kegiatan dari QR
+      keterangan: "hadir",     // Selalu hadir jika berhasil scan
       waktu: new Date().toISOString(),
-      qr: data,
     };
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbwzjQMLlsFpx1eUBYcOle_QukrGjgsaODnUxwfyoOHSDlO9LKbbOCMEkYXolAyKcdqlSg/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwmw9Lk-e1NoxgqqV6Og6PLokxNXElTD2Sy_xlaEvUx7pa5EqadCY5zLM_8DjKcXfR7Pw/exec", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,6 +46,12 @@ export default function ScanPage() {
 
       const result = await response.json();
       console.log("[ScanPage] Response dari server:", result);
+
+      // Tandai kegiatan sudah di-scan hari ini
+      const updatedTodayHistory = [...todayHistory, data];
+      const updatedScanHistory = { ...scanHistory, [today]: updatedTodayHistory };
+      localStorage.setItem("scanHistory", JSON.stringify(updatedScanHistory));
+
       alert(`✅ Scan berhasil: ${data}`);
       setScannedData(data);
     } catch (error) {
