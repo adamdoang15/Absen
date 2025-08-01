@@ -16,7 +16,11 @@ export default function QRScanner({ onScanSuccess }) {
     Html5Qrcode.getCameras()
       .then((devices) => {
         if (devices.length && isMounted && !isStartedRef.current) {
-          const cameraId = devices[0].id;
+          // 🟢 Pilih kamera belakang jika tersedia
+          const backCamera = devices.find((d) =>
+            d.label.toLowerCase().includes("back") || d.label.toLowerCase().includes("environment")
+          );
+          const cameraId = backCamera ? backCamera.id : devices[0].id;
 
           scanner
             .start(
@@ -50,11 +54,13 @@ export default function QRScanner({ onScanSuccess }) {
             })
             .catch((err) => {
               console.error("Start camera error:", err.message);
+              alert("❌ Gagal mengakses kamera. Pastikan izin kamera diberikan.");
             });
         }
       })
       .catch((err) => {
         console.error("Camera access error:", err.message);
+        alert("❌ Tidak bisa mengakses kamera. Pastikan izin kamera aktif.");
       });
 
     return () => {
