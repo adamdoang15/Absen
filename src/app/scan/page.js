@@ -51,7 +51,7 @@ export default function ScanPage() {
     };
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbwmw9Lk-e1NoxgqqV6Og6PLokxNXElTD2Sy_xlaEvUx7pa5EqadCY5zLM_8DjKcXfR7Pw/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbxGSj3CmApgYDL_U3LfCYPAmOS7LogwWyB3qMc5SYzaqWI6kFtmGfNtQ-6kv_7KdrWg_A/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
