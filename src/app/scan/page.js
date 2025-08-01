@@ -14,12 +14,11 @@ export default function ScanPage() {
     }
 
     const userInfo = JSON.parse(saved);
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
 
-    // Cek apakah sudah scan kegiatan yang sama hari ini
+    // Cek apakah sudah absen kegiatan ini hari ini
     const scanHistoryRaw = localStorage.getItem("scanHistory");
     const scanHistory = scanHistoryRaw ? JSON.parse(scanHistoryRaw) : {};
-
     const todayHistory = scanHistory[today] || [];
 
     if (todayHistory.includes(data)) {
@@ -28,11 +27,11 @@ export default function ScanPage() {
     }
 
     const payload = {
+      timestamp: new Date().toISOString(),
       nama: userInfo.nama,
       kelas: userInfo.kelas,
-      aktivitas: data,         // Nama kegiatan dari QR
-      keterangan: "hadir",     // Selalu hadir jika berhasil scan
-      waktu: new Date().toISOString(),
+      aktivitas: data,
+      keterangan: "hadir",
     };
 
     try {
@@ -47,13 +46,17 @@ export default function ScanPage() {
       const result = await response.json();
       console.log("[ScanPage] Response dari server:", result);
 
-      // Tandai kegiatan sudah di-scan hari ini
-      const updatedTodayHistory = [...todayHistory, data];
-      const updatedScanHistory = { ...scanHistory, [today]: updatedTodayHistory };
-      localStorage.setItem("scanHistory", JSON.stringify(updatedScanHistory));
+      if (result.success) {
+        // Simpan riwayat scan untuk hari ini
+        const updatedTodayHistory = [...todayHistory, data];
+        const updatedScanHistory = { ...scanHistory, [today]: updatedTodayHistory };
+        localStorage.setItem("scanHistory", JSON.stringify(updatedScanHistory));
 
-      alert(`✅ Scan berhasil: ${data}`);
-      setScannedData(data);
+        alert(`✅ Scan berhasil: ${data}`);
+        setScannedData(data);
+      } else {
+        alert("⚠️ Gagal absen, server menolak.");
+      }
     } catch (error) {
       console.error("[ScanPage] Gagal mengirim data:", error);
       alert("❌ Gagal mengirim data absensi.");
