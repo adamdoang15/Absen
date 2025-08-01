@@ -3,48 +3,19 @@
 import QRScanner from "@/components/QRScanner";
 import { useState } from "react";
 
-const allowedActivities = [
-  "Upacara",
-  "Belajar Pagi",
-  "Shalat Dhuha",
-  "Istirahat",
-  "Belajar Siang",
-  "Shalat Dzuhur",
-  "Belajar Malam",
-];
-
 export default function ScanPage() {
-  const [scannedData, setScannedData] = useState(null);
+  const [scanning, setScanning] = useState(false);
 
   const handleScan = async (data) => {
-    const saved = localStorage.getItem("userInfo");
-    if (!saved) {
-      alert("Perangkat belum terdaftar. Silakan daftar di menu 'Device'.");
-      return;
-    }
+    if (!data || scanning) return;
+    setScanning(true);
 
-    if (!allowedActivities.includes(data)) {
-      alert(`❌ Kegiatan "${data}" tidak terdaftar.`);
-      return;
-    }
-
-    const userInfo = JSON.parse(saved);
-    const today = new Date().toISOString().split("T")[0];
-
-    const scanHistoryRaw = localStorage.getItem("scanHistory");
-    const scanHistory = scanHistoryRaw ? JSON.parse(scanHistoryRaw) : {};
-    const todayHistory = scanHistory[today] || [];
-
-    if (todayHistory.includes(data)) {
-      alert(`❌ Kamu sudah absen untuk kegiatan "${data}" hari ini.`);
-      return;
-    }
-
+    // Kirim data absensi dummy
     const payload = {
-      nama: userInfo.nama,
-      kelas: userInfo.kelas,
+      nama: "Fulan",
+      kelas: "10A",
       aktivitas: data,
-      keterangan: "hadir",
+      keterangan: "hadir"
     };
 
     try {
@@ -55,33 +26,24 @@ export default function ScanPage() {
       });
 
       const result = await response.json();
-      console.log("[ScanPage] Response dari server:", result);
-
-      if (!result.success) {
-        alert(`❌ ${result.message || "Gagal mengirim absensi."}`);
-        return;
+      if (result.success) {
+        alert(`✅ Absensi berhasil untuk "${data}"`);
+      } else {
+        alert(`❌ Gagal: ${result.message || "Absensi gagal"}`);
       }
-
-      const updatedTodayHistory = [...todayHistory, data];
-      const updatedScanHistory = { ...scanHistory, [today]: updatedTodayHistory };
-      localStorage.setItem("scanHistory", JSON.stringify(updatedScanHistory));
-
-      alert(`✅ Scan berhasil: ${data}`);
-      setScannedData(data);
     } catch (error) {
-      console.error("[ScanPage] Gagal mengirim data:", error);
+      console.error("Gagal kirim:", error);
       alert("❌ Gagal mengirim data absensi.");
     }
+
+    // Cegah double scan dalam 3 detik
+    setTimeout(() => setScanning(false), 3000);
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-sky-100 to-white p-6">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-semibold text-sky-700 mb-2">Scan QR Code</h1>
-        <p className="text-gray-600">Arahkan kamera ke QR Code kegiatan</p>
-      </div>
-
-      <div className="relative rounded-2xl bg-white/60 backdrop-blur-md shadow-lg p-4 w-full max-w-sm">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-white p-6">
+      <h1 className="text-xl font-bold mb-4">Scan QR Absensi</h1>
+      <div className="rounded-lg shadow-md p-4 bg-gray-100 w-full max-w-sm">
         <QRScanner onScanSuccess={handleScan} />
       </div>
     </main>
